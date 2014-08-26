@@ -107,7 +107,7 @@ class chargify
                 $final[$num]['price'] = floatval(0);
             }
 
-            $final[$num]['price'] = bcadd($final[$num]['price'], $data['price'], 2);
+            $final[$num]['price'] = number_format(bcadd($final[$num]['price'], $data['price'], 2), 2, '.', ',');
         }
 
         $this->weekTotals = $final;
