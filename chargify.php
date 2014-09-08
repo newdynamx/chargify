@@ -84,7 +84,7 @@ class chargify
 
             if(!isset($thisWeek)) {
                 $thisWeek = $week;
-                $final[$num]['date'] = date('D Y-m-d', strtotime('this Monday', strtotime($data['date']))) . " - " .
+                $final[$num]['date'] = date('D Y-m-d', strtotime('last Monday', strtotime($data['date']))) . " - " .
                     date('D Y-m-d', strtotime('this Friday', strtotime($data['date'])));
             }
 
@@ -107,7 +107,7 @@ class chargify
                 $final[$num]['price'] = floatval(0);
             }
 
-            $final[$num]['price'] = number_format(bcadd($final[$num]['price'], $data['price'], 2), 2, '.', ',');
+            $final[$num]['price'] = bcadd($final[$num]['price'], $data['price'], 2);
         }
 
         $this->weekTotals = $final;
@@ -194,7 +194,7 @@ function downloadFileInIFrame()
                 <?php foreach($chargify->weekTotals as $key => $value) { ?>
                     <tr>
                         <td><?php echo $value['date']; ?></td>
-                        <td align="right">$<?php echo $value['price']; ?></td>
+                        <td align="right">$<?php echo number_format($value['price'], 2, '.', ','); ?></td>
                     </tr>
                 <?php } ?>
             </table>
