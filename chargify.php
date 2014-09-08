@@ -17,6 +17,9 @@ if (isset($_REQUEST['filenameDownload']) && $_REQUEST['filenameDownload'] != '')
 
 class chargify
 {
+    public $creditCardPercentFee = 2.9;
+    public $creditCardFee = .30;
+
     public $dataByDate = [];
 
     public $weekTotals;
@@ -97,6 +100,15 @@ class chargify
                 $thisWeek = $week;
                 $final[$num]['date'] = date('D Y-m-d', strtotime('this Monday', strtotime($data['date']))) . " - " .
                     date('D Y-m-d', strtotime('this Friday', strtotime($data['date'])));
+
+                $dateStart = new DateTime(date('D Y-m-d', strtotime('this Monday', strtotime($data['date']))));
+                $dateEnd = new DateTime(date('D Y-m-d', strtotime('this Friday', strtotime($data['date']))));
+
+                if($dateStart > $dateEnd) {
+                    $final[$num]['date'] = date('D Y-m-d', strtotime('last Monday', strtotime($data['date']))) . " - " .
+                        date('D Y-m-d', strtotime('this Friday', strtotime($data['date'])));
+                }
+
                 $flag = true;
             }else{
                 $flag = false;
@@ -110,7 +122,18 @@ class chargify
             $final[$num]['price'] = bcadd($final[$num]['price'], $data['price'], 2);
         }
 
+        foreach($final as $key => $value)
+        {
+            $final[$key]['price'] = $this->removeCreditCardFee($value['price']);
+        }
+
         $this->weekTotals = $final;
+    }
+
+    public function removeCreditCardFee($amount)
+    {
+        $fee = bcadd(bcdiv(bcmul($amount, $this->creditCardPercentFee, 2), 100, 2), $this->creditCardFee, 2);
+        return bcsub($amount, $fee, 2);
     }
 
     public function createCsv()
