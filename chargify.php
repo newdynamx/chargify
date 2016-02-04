@@ -22,7 +22,7 @@ class chargify
 
     public $dataByDate = [];
 
-    public $weekTotals;
+    public $weekTotals = [];
 
     public $filename;
 
@@ -61,6 +61,15 @@ class chargify
                 }
 
                 $date = date('D Y-m-d', strtotime($data[19] .  '2 days'));
+                $day = date("l", strtotime($data[19] .  '2 days'));
+
+                switch ($day) {
+                    case "Saturday":
+                        $date = date('D Y-m-d', strtotime($data[19] .  '4 days'));
+                        break;
+                    case "Sunday":
+                        $date = date('D Y-m-d', strtotime($data[19] .  '3 days'));
+                }
 
                 $this->dataByDate[] = [
                     'date' => $date,
@@ -74,60 +83,40 @@ class chargify
 
     public function getWeekTotalsFromData()
     {
-        $final = [];
         $num = 0;
+        $thisWeek = '';
         foreach($this->dataByDate as $key => $data)
         {
             $week = date('W', strtotime($data['date']));
-            $day = date('N', strtotime($data['date']));
+            $day = date('l', strtotime($data['date']));
 
-            if($day > 5) {
-                $week++;
-            }
-
-            if(!isset($thisWeek)) {
+            if ($thisWeek === '' || $week != $thisWeek) {
                 $thisWeek = $week;
-                $final[$num]['date'] = date('D Y-m-d', strtotime('last Monday', strtotime($data['date']))) . " - " .
-                    date('D Y-m-d', strtotime('this Friday', strtotime($data['date'])));
-            }
 
-            if(!isset($thisDate)) {
-                $thisDate = $data['date'];
-            }
-
-            if (($week > $thisWeek) && (isset($flag) && $flag == false && $thisDate != $data['date'])) {
-                $num++;
-                $thisWeek = $week;
-                $final[$num]['date'] = date('D Y-m-d', strtotime('this Monday', strtotime($data['date']))) . " - " .
-                    date('D Y-m-d', strtotime('this Friday', strtotime($data['date'])));
-
-                $dateStart = new DateTime(date('D Y-m-d', strtotime('this Monday', strtotime($data['date']))));
-                $dateEnd = new DateTime(date('D Y-m-d', strtotime('this Friday', strtotime($data['date']))));
-
-                if($dateStart > $dateEnd) {
-                    $final[$num]['date'] = date('D Y-m-d', strtotime('last Monday', strtotime($data['date']))) . " - " .
-                        date('D Y-m-d', strtotime('this Friday', strtotime($data['date'])));
+                if ($day != 'Monday') {
+                    $dateRangeStart = date('D Y-m-d', strtotime('last Monday', strtotime($data['date'])));
+                } else {
+                    $dateRangeStart = date('D Y-m-d', strtotime($data['date']));
                 }
 
-                $flag = true;
-            }else{
-                $flag = false;
-                $thisDate = $data['date'];
+                if ($day != 'Friday') {
+                    $dateRangeEnd = date('D Y-m-d', strtotime('this Friday', strtotime($data['date'])));
+                } else {
+                    $dateRangeEnd = date('D Y-m-d', strtotime($data['date']));
+                }
+                $num++;
+
+                $dateRange = $dateRangeStart . " - " . $dateRangeEnd;
+            }
+            if (!isset($data['price'])) {
+                $data['price'] = 0;
             }
 
-            if(!isset($final[$num]['price'])) {
-                $final[$num]['price'] = floatval(0);
+            if (!isset($this->weekTotals[$dateRange]['price'])) {
+                $this->weekTotals[$dateRange]['price'] = 0;
             }
-
-            $final[$num]['price'] = bcadd($final[$num]['price'], $data['price'], 2);
+            $this->weekTotals[$dateRange]['price'] += $this->removeCreditCardFee($data['price']);
         }
-
-        foreach($final as $key => $value)
-        {
-            $final[$key]['price'] = $this->removeCreditCardFee($value['price']);
-        }
-
-        $this->weekTotals = $final;
     }
 
     public function removeCreditCardFee($amount)
@@ -216,7 +205,7 @@ function downloadFileInIFrame()
                 </tr>
                 <?php foreach($chargify->weekTotals as $key => $value) { ?>
                     <tr>
-                        <td><?php echo $value['date']; ?></td>
+                        <td><?php echo $key; ?></td>
                         <td align="right">$<?php echo number_format($value['price'], 2, '.', ','); ?></td>
                     </tr>
                 <?php } ?>
