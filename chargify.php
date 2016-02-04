@@ -60,15 +60,15 @@ class chargify
                     continue;
                 }
 
-                $date = date('D Y-m-d', strtotime($data[19] .  '2 days'));
-                $day = date("l", strtotime($data[19] .  '2 days'));
+                $date = date('D Y-m-d', strtotime($data[19] .  '3 days'));
+                $day = date("l", strtotime($data[19] .  '3 days'));
 
                 switch ($day) {
                     case "Saturday":
-                        $date = date('D Y-m-d', strtotime($data[19] .  '4 days'));
+                        $date = date('D Y-m-d', strtotime($data[19] .  '5 days'));
                         break;
                     case "Sunday":
-                        $date = date('D Y-m-d', strtotime($data[19] .  '3 days'));
+                        $date = date('D Y-m-d', strtotime($data[19] .  '4 days'));
                 }
 
                 $this->dataByDate[] = [
